@@ -12,9 +12,9 @@ type ImplStorageMock struct {
 	mock.Mock
 }
 
-// GetProfileByID provides a mock function with given fields: id
-func (mk *ImplStorageMock) GetProfileByID(id string) (pf *Profile, err error) {
-	args := mk.Called(id)
+// GetProfileByUserId provides a mock function with given fields: userId
+func (mk *ImplStorageMock) GetProfileByUserId(userId string) (pf *Profile, err error) {
+	args := mk.Called(userId)
 	pf = args.Get(0).(*Profile)
 	err = args.Error(1)
 	return
