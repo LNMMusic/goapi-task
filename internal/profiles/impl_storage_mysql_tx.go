@@ -2,6 +2,7 @@ package profiles
 
 import (
 	"api/pkg/mysql/transactioner"
+	"errors"
 	"fmt"
 )
 
@@ -21,19 +22,24 @@ type ImplStorageMySQLTx struct {
 	tr transactioner.Transactioner
 }
 
-// GetProfileByID returns a profile by its ID
-func (s *ImplStorageMySQLTx) GetProfileByID(id string) (pf *Profile, err error) {
+// GetProfileByUserId returns a profile by its userId
+func (s *ImplStorageMySQLTx) GetProfileByUserId(userId string) (pf *Profile, err error) {
 	// run operation
-	err = s.tr.Do(func() (e error) {
+	e := s.tr.Do(func() (e error) {
 		// get base values from storage (wrapping process)
-		pf, err = s.st.GetProfileByID(id)
+		pf, err = s.st.GetProfileByUserId(userId)
 		if err != nil {
 			e = err
 		}
 		return
 	})
-	if err != nil {
-		err = fmt.Errorf("%w. %s", ErrStorageInternal, err.Error())
+	if e != nil {
+		switch {
+		case errors.Is(e, transactioner.ErrTransactionOperation):
+			return
+		default:
+			err = fmt.Errorf("%w. %s", ErrStorageInternal, e.Error())
+		}
 		return
 	}
 
@@ -43,15 +49,21 @@ func (s *ImplStorageMySQLTx) GetProfileByID(id string) (pf *Profile, err error) 
 // ActivateProfile
 func (s *ImplStorageMySQLTx) ActivateProfile(pf *Profile) (err error) {
 	// run operation
-	err = s.tr.Do(func() (e error) {
+	e := s.tr.Do(func() (e error) {
+		// get base values from storage (wrapping process)
 		err = s.st.ActivateProfile(pf)
 		if err != nil {
 			e = err
 		}
 		return
 	})
-	if err != nil {
-		err = fmt.Errorf("%w. %s", ErrStorageInternal, err.Error())
+	if e != nil {
+		switch {
+		case errors.Is(e, transactioner.ErrTransactionOperation):
+			return
+		default:
+			err = fmt.Errorf("%w. %s", ErrStorageInternal, e.Error())
+		}
 		return
 	}
 

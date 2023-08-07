@@ -32,10 +32,10 @@ type ImplStorageMySQL struct {
 	db *sql.DB
 }
 
-// GetProfileByID returns a profile by its ID
-func (s *ImplStorageMySQL) GetProfileByID(id string) (pf *Profile, err error) {
+// GetProfileByUserId returns a profile by its userId
+func (s *ImplStorageMySQL) GetProfileByUserId(userId string) (pf *Profile, err error) {
 	// query
-	query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?"
+	query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE user_id = ?"
 
 	// prepare statement
 	var stmt *sql.Stmt
@@ -46,7 +46,7 @@ func (s *ImplStorageMySQL) GetProfileByID(id string) (pf *Profile, err error) {
 	}
 
 	// execute query
-	row := stmt.QueryRow(id)
+	row := stmt.QueryRow(userId)
 	if row.Err() != nil {
 		switch {
 		case errors.Is(row.Err(), sql.ErrNoRows):

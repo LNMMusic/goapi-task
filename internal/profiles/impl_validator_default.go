@@ -61,6 +61,11 @@ func (impl *ImplValidatorDefault) Validate(pf *Profile) (err error) {
 	}
 
 	// quality validation
+	userID, _ := pf.UserID.Unwrap()
+	if userID == "" {
+		err = fmt.Errorf("%w - user_id field can not be empty", ErrValidatorInvalidProfile)
+		return
+	}
 	if pf.Name.IsSome() {
 		name, _ := pf.Name.Unwrap()
 		if len(name) < 3 || len(name) > 50 {

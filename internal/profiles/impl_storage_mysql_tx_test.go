@@ -2,7 +2,6 @@ package profiles
 
 import (
 	"api/pkg/mysql/transactioner"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,8 +9,8 @@ import (
 )
 
 // Tests for ImplStorageMySQLTx
-func TestImplStorageMySQLTx_GetProfileByID(t *testing.T) {
-	type input struct { id string }
+func TestImplStorageMySQLTx_GetProfileByUserId(t *testing.T) {
+	type input struct { userId string }
 	type output struct { pf *Profile; err error; errMsg string }
 	type testCase struct {
 		name string
@@ -26,10 +25,10 @@ func TestImplStorageMySQLTx_GetProfileByID(t *testing.T) {
 		// valid cases
 		{
 			name: "valid case",
-			input: input{ id: "id" },
+			input: input{ userId: "user_id" },
 			output: output{ pf: &Profile{}, err: nil, errMsg: "" },
 			setUpStorage: func(mk *ImplStorageMock) {
-				mk.On("GetProfileByID", "id").Return(&Profile{}, nil)
+				mk.On("GetProfileByUserId", "user_id").Return(&Profile{}, nil)
 			},
 			setUpTransactioner: func(mk *transactioner.ImplTransactionerMock) {
 				mk.On("Do", mock.Anything).Return(nil)
@@ -39,14 +38,48 @@ func TestImplStorageMySQLTx_GetProfileByID(t *testing.T) {
 		// invalid cases
 		// -> operation error
 		{
-			name: "operation error",
-			input: input{ id: "id" },
-			output: output{ pf: &Profile{}, err: ErrStorageInternal, errMsg: "storage: internal storage error. transactioner: operation error" },
+			name: "operation error - not found",
+			input: input{ userId: "user_id" },
+			output: output{ pf: &Profile{}, err: ErrStorageNotFound, errMsg: "storage: profile not found" },
 			setUpStorage: func(mk *ImplStorageMock) {
-				mk.On("GetProfileByID", "id").Return(&Profile{}, ErrStorageInternal)
+				mk.On("GetProfileByUserId", "user_id").Return(&Profile{}, ErrStorageNotFound)
 			},
 			setUpTransactioner: func(mk *transactioner.ImplTransactionerMock) {
-				mk.On("Do", mock.Anything).Return(errors.New("transactioner: operation error"))
+				mk.On("Do", mock.Anything).Return(transactioner.ErrTransactionOperation)
+			},
+		},
+		// -> default error
+		{
+			name: "default error - begin transaction",
+			input: input{ userId: "user_id" },
+			output: output{ pf: &Profile{}, err: ErrStorageInternal, errMsg: "storage: internal storage error. transactioner: cannot begin transaction" },
+			setUpStorage: func(mk *ImplStorageMock) {
+				mk.On("GetProfileByUserId", "user_id").Return(&Profile{}, nil)
+			},
+			setUpTransactioner: func(mk *transactioner.ImplTransactionerMock) {
+				mk.On("Do", mock.Anything).Return(transactioner.ErrTransactionBegin)
+			},
+		},
+		{
+			name: "default error - commit transaction",
+			input: input{ userId: "user_id" },
+			output: output{ pf: &Profile{}, err: ErrStorageInternal, errMsg: "storage: internal storage error. transactioner: cannot commit transaction" },
+			setUpStorage: func(mk *ImplStorageMock) {
+				mk.On("GetProfileByUserId", "user_id").Return(&Profile{}, nil)
+			},
+			setUpTransactioner: func(mk *transactioner.ImplTransactionerMock) {
+				mk.On("Do", mock.Anything).Return(transactioner.ErrTransactionCommit)
+			},
+		},
+		{
+			name: "default error - rollback transaction",
+			input: input{ userId: "user_id" },
+			output: output{ pf: &Profile{}, err: ErrStorageInternal, errMsg: "storage: internal storage error. transactioner: cannot rollback transaction" },
+			setUpStorage: func(mk *ImplStorageMock) {
+				mk.On("GetProfileByUserId", "user_id").Return(&Profile{}, nil)
+			},
+			setUpTransactioner: func(mk *transactioner.ImplTransactionerMock) {
+				mk.On("Do", mock.Anything).Return(transactioner.ErrTransactionRollback)
 			},
 		},
 	}
@@ -64,7 +97,7 @@ func TestImplStorageMySQLTx_GetProfileByID(t *testing.T) {
 			impl := NewImplStorageMySQLTx(st, tr)
 
 			// act
-			pf, err := impl.GetProfileByID(c.input.id)
+			pf, err := impl.GetProfileByUserId(c.input.userId)
 
 			// assert
 			assert.Equal(t, c.output.pf, pf)
@@ -108,14 +141,48 @@ func TestImplStorageMySQLTx_ActivateProfile(t *testing.T) {
 		// invalid cases
 		// -> operation error
 		{
-			name: "operation error",
+			name: "operation error - invalid profile",
 			input: input{ pf: &Profile{} },
-			output: output{ err: ErrStorageInternal, errMsg: "storage: internal storage error. transactioner: operation error" },
+			output: output{ err: ErrStorageInvalidProfile, errMsg: "storage: invalid profile" },
 			setUpStorage: func(mk *ImplStorageMock) {
-				mk.On("ActivateProfile", &Profile{}).Return(ErrStorageInternal)
+				mk.On("ActivateProfile", &Profile{}).Return(ErrStorageInvalidProfile)
 			},
 			setUpTransactioner: func(mk *transactioner.ImplTransactionerMock) {
-				mk.On("Do", mock.Anything).Return(errors.New("transactioner: operation error"))
+				mk.On("Do", mock.Anything).Return(transactioner.ErrTransactionOperation)
+			},
+		},
+		// -> default error
+		{
+			name: "default error - begin transaction",
+			input: input{ pf: &Profile{} },
+			output: output{ err: ErrStorageInternal, errMsg: "storage: internal storage error. transactioner: cannot begin transaction" },
+			setUpStorage: func(mk *ImplStorageMock) {
+				mk.On("ActivateProfile", &Profile{}).Return(nil)
+			},
+			setUpTransactioner: func(mk *transactioner.ImplTransactionerMock) {
+				mk.On("Do", mock.Anything).Return(transactioner.ErrTransactionBegin)
+			},
+		},
+		{
+			name: "default error - commit transaction",
+			input: input{ pf: &Profile{} },
+			output: output{ err: ErrStorageInternal, errMsg: "storage: internal storage error. transactioner: cannot commit transaction" },
+			setUpStorage: func(mk *ImplStorageMock) {
+				mk.On("ActivateProfile", &Profile{}).Return(nil)
+			},
+			setUpTransactioner: func(mk *transactioner.ImplTransactionerMock) {
+				mk.On("Do", mock.Anything).Return(transactioner.ErrTransactionCommit)
+			},
+		},
+		{
+			name: "default error - rollback transaction",
+			input: input{ pf: &Profile{} },
+			output: output{ err: ErrStorageInternal, errMsg: "storage: internal storage error. transactioner: cannot rollback transaction" },
+			setUpStorage: func(mk *ImplStorageMock) {
+				mk.On("ActivateProfile", &Profile{}).Return(nil)
+			},
+			setUpTransactioner: func(mk *transactioner.ImplTransactionerMock) {
+				mk.On("Do", mock.Anything).Return(transactioner.ErrTransactionRollback)
 			},
 		},
 	}

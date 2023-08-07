@@ -18,9 +18,9 @@ type ImplStorageValidator struct {
 	vl Validator
 }
 
-// GetProfileByID returns a profile by its ID
-func (impl *ImplStorageValidator) GetProfileByID(id string) (pf *Profile, err error) {
-	pf, err = impl.st.GetProfileByID(id)
+// GetProfileByUserId returns a profile by its userId
+func (impl *ImplStorageValidator) GetProfileByUserId(id string) (pf *Profile, err error) {
+	pf, err = impl.st.GetProfileByUserId(id)
 	return
 }
 

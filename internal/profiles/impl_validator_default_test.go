@@ -66,6 +66,16 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		},
 		// -> quality validation
 		{
+			name: "invalid case - user_id field empty",
+			input: input{
+				pf: &Profile{
+					ID: optional.Some("id"),
+					UserID: optional.Some(""),
+				},
+			},
+			output: output{err: ErrValidatorInvalidProfile, errMsg: "validator: invalid profile - user_id field can not be empty"},
+		},
+		{
 			name: "invalid case - name field too short",
 			input: input{
 				pf: &Profile{
