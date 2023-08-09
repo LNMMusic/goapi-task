@@ -1,6 +1,7 @@
-package profiles
+package validator
 
 import (
+	"api/internal/profiles"
 	"testing"
 
 	"github.com/LNMMusic/optional"
@@ -9,7 +10,7 @@ import (
 
 // Tests for ImplValidatorDefault
 func TestImplValidatorDefault_Validate(t *testing.T) {
-	type input struct { pf *Profile }
+	type input struct { pf *profiles.Profile }
 	type output struct { err error; errMsg string }
 	type test struct {
 		name string
@@ -22,7 +23,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "valid case - only required and valid fields",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 				},
@@ -32,7 +33,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "valid case - all fields",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Name: optional.Some("name"),
@@ -49,7 +50,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "invalid case - missing id",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					UserID: optional.Some("user_id"),
 				},
 			},
@@ -58,7 +59,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "invalid case - missing user_id",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 				},
 			},
@@ -68,7 +69,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "invalid case - user_id field empty",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some(""),
 				},
@@ -78,7 +79,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "invalid case - name field too short",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Name: optional.Some("na"),
@@ -89,7 +90,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "invalid case - name field too long",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Name: optional.Some("this name is way extremely too long and will cause an error"),
@@ -100,7 +101,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "invalid case - email field invalid",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Email: optional.Some("johndoegmail.com"),
@@ -111,7 +112,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "invalid case - phone field invalid",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Phone: optional.Some("123456789"),
@@ -122,7 +123,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "invalid case - address field too short",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Address: optional.Some("ad"),
@@ -133,7 +134,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 		{
 			name: "invalid case - address field too long",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Address: optional.Some("this address is way extremely too long and will cause an error"),
@@ -147,7 +148,7 @@ func TestImplValidatorDefault_Validate(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			// arrange
-			impl := NewImplValidatorDefault(nil)
+			impl := NewImplProfilesValidatorDefault(nil)
 
 			// act
 			err := impl.Validate(c.input.pf)

@@ -1,33 +1,34 @@
-package profiles
+package storage
 
 import (
+	"api/internal/profiles"
 	"api/pkg/mysql/transactioner"
 	"errors"
 	"fmt"
 )
 
-func NewImplStorageMySQLTx(st Storage, tr transactioner.Transactioner) *ImplStorageMySQLTx {
-	return &ImplStorageMySQLTx{
+func NewImplProfilesStorageMySQLTx(st ProfilesStorage, tr transactioner.Transactioner) *ImplProfilesStorageMySQLTx {
+	return &ImplProfilesStorageMySQLTx{
 		st: st,
 		tr: tr,
 	}
 }
 
-// ImplStorageMySQLTx is the implementation of the Storage interface for MySQL
-// - Wraps the ImplStorageMySQL with a transaction
-type ImplStorageMySQLTx struct {
+// ImplProfilesStorageMySQLTx is the implementation of the Storage interface for MySQL
+// - Wraps the ImplProfilesStorageMySQL with a transaction
+type ImplProfilesStorageMySQLTx struct {
 	// st is the storage implementation (to be wrapped)
-	st Storage
+	st ProfilesStorage
 	// transactioner is the transactioner implementation
 	tr transactioner.Transactioner
 }
 
-// GetProfileByUserId returns a profile by its userId
-func (s *ImplStorageMySQLTx) GetProfileByUserId(userId string) (pf *Profile, err error) {
+// GetProfileById returns a profile by its userId
+func (s *ImplProfilesStorageMySQLTx) GetProfileById(id string) (pf *profiles.Profile, err error) {
 	// run operation
 	e := s.tr.Do(func() (e error) {
 		// get base values from storage (wrapping process)
-		pf, err = s.st.GetProfileByUserId(userId)
+		pf, err = s.st.GetProfileById(id)
 		if err != nil {
 			e = err
 		}
@@ -47,7 +48,7 @@ func (s *ImplStorageMySQLTx) GetProfileByUserId(userId string) (pf *Profile, err
 }
 
 // ActivateProfile
-func (s *ImplStorageMySQLTx) ActivateProfile(pf *Profile) (err error) {
+func (s *ImplProfilesStorageMySQLTx) ActivateProfile(pf *profiles.Profile) (err error) {
 	// run operation
 	e := s.tr.Do(func() (e error) {
 		// get base values from storage (wrapping process)

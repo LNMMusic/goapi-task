@@ -1,6 +1,7 @@
-package profiles
+package storage
 
 import (
+	"api/internal/profiles"
 	"database/sql"
 	"errors"
 	"regexp"
@@ -12,10 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Tests for ImplStorageMySQL
-func TestImplStorageMySQL_GetProfileByUserId(t *testing.T) {
-	type input struct { userId string }
-	type output struct { pf *Profile; err error; errMsg string }
+// Tests for ImplProfilesStorageMySQL
+func TestImplProfilesStorageMySQL_GetProfileById(t *testing.T) {
+	type input struct { id string }
+	type output struct { pf *profiles.Profile; err error; errMsg string }
 	type test struct {
 		name string
 		input input
@@ -28,9 +29,9 @@ func TestImplStorageMySQL_GetProfileByUserId(t *testing.T) {
 		// valid cases
 		{
 			name: "valid case - found",
-			input: input{userId: "user_id"},
+			input: input{id: "id"},
 			output: output{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Name: optional.Some("name"),
@@ -42,7 +43,7 @@ func TestImplStorageMySQL_GetProfileByUserId(t *testing.T) {
 			},
 			setUpDB: func (mk sqlmock.Sqlmock) {
 				// query
-				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE user_id = ?"
+				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?"
 				
 				cols := []string{"id", "user_id", "name", "email", "phone", "address"}
 				rows := sqlmock.NewRows(cols)
@@ -58,7 +59,7 @@ func TestImplStorageMySQL_GetProfileByUserId(t *testing.T) {
 				// expectations
 				mk.
 					ExpectPrepare(regexp.QuoteMeta(query)).
-					ExpectQuery().WithArgs("user_id").
+					ExpectQuery().WithArgs("id").
 					WillReturnRows(rows)
 			},
 		},
@@ -67,52 +68,52 @@ func TestImplStorageMySQL_GetProfileByUserId(t *testing.T) {
 		// -> query error. no rows
 		{
 			name: "invalid case - not found",
-			input: input{userId: "user_id"},
+			input: input{id: "id"},
 			output: output{
 				pf: nil,
 				err: ErrStorageNotFound, errMsg: "storage: profile not found. sql: no rows in result set",
 			},
 			setUpDB: func (mk sqlmock.Sqlmock) {
 				// query
-				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE user_id = ?"
+				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?"
 
 				// expectations
 				mk.
 					ExpectPrepare(regexp.QuoteMeta(query)).
-					ExpectQuery().WithArgs("user_id").
+					ExpectQuery().WithArgs("id").
 					WillReturnError(sql.ErrNoRows)
 			},
 		},
 		// -> query error. internal error
 		{
 			name: "invalid case - scan internal error",
-			input: input{userId: "user_id"},
+			input: input{id: "id"},
 			output: output{
 				pf: nil,
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. sql: internal error",
 			},
 			setUpDB: func (mk sqlmock.Sqlmock) {
 				// query
-				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE user_id = ?"
+				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?"
 
 				// expectations
 				mk.
 					ExpectPrepare(regexp.QuoteMeta(query)).
-					ExpectQuery().WithArgs("user_id").
+					ExpectQuery().WithArgs("id").
 					WillReturnError(errors.New("sql: internal error"))
 			},
 		},
 		// -> prepare error
 		{
 			name: "invalid case - prepare internal error",
-			input: input{userId: "user_id"},
+			input: input{id: "id"},
 			output: output{
 				pf: nil,
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. sql: prepare error",
 			},
 			setUpDB: func (mk sqlmock.Sqlmock) {
 				// query
-				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE user_id = ?"
+				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?"
 
 				// expectations
 				mk.
@@ -132,10 +133,10 @@ func TestImplStorageMySQL_GetProfileByUserId(t *testing.T) {
 
 			c.setUpDB(mk)
 
-			impl := NewImplStorageMySQL(db)
+			impl := NewImplProfilesStorageMySQL(db)
 
 			// act
-			pf, err := impl.GetProfileByUserId(c.input.userId)
+			pf, err := impl.GetProfileById(c.input.id)
 
 			// assert
 			assert.Equal(t, c.output.pf, pf)
@@ -149,8 +150,8 @@ func TestImplStorageMySQL_GetProfileByUserId(t *testing.T) {
 	}
 }
 
-func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
-	type input struct { pf *Profile }
+func TestImplProfilesStorageMySQL_ActiveProfile(t *testing.T) {
+	type input struct { pf *profiles.Profile }
 	type output struct { err error; errMsg string }
 	type testCase struct {
 		name string
@@ -165,7 +166,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		{
 			name: "valid case - success",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Name: optional.Some("name"),
@@ -198,7 +199,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> prepare error
 		{
 			name: "invalid case - prepare internal error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. sql: prepare error",
 			},
@@ -215,7 +216,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> exec error. default error
 		{
 			name: "invalid case - exec internal error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. sql: exec error",
 			},
@@ -233,7 +234,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> exec error. mysql error - duplicate entry
 		{
 			name: "invalid case - exec duplicate entry error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageNotUnique, errMsg: "storage: profile not unique. Error 1062: duplicate entry",
 			},
@@ -251,7 +252,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> exec error. mysql error - other
 		{
 			name: "invalid case - exec mysql error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. Error 1234: other error",
 			},
@@ -269,7 +270,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> result error.
 		{
 			name: "invalid case - result error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. sql: result error",
 			},
@@ -287,7 +288,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> result error. rows affected != 1
 		{
 			name: "invalid case - result error. rows affected != 1",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. rows affected != 1",
 			},
@@ -314,7 +315,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 
 			c.setUpDB(mk)
 
-			impl := NewImplStorageMySQL(db)
+			impl := NewImplProfilesStorageMySQL(db)
 
 			// act
 			err = impl.ActivateProfile(c.input.pf)

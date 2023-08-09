@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"api/internal/profiles"
+	"api/internal/profiles/contexter"
+	"api/internal/profiles/storage"
 	"api/pkg/uuidgenerator"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,15 +15,15 @@ import (
 )
 
 // Tests for ProfileController handlers
-func TestProfileController_GetProfileByUserId(t *testing.T) {
-	type input struct { w *httptest.ResponseRecorder; r *http.Request }
+func TestProfileController_GetProfileById(t *testing.T) {
+	type input struct { w *httptest.ResponseRecorder; r *http.Request; setR func (r *http.Request) }
 	type output struct { code int; body string; headers http.Header }
 	type testCase struct {
 		name string
 		input input
 		output output
 		// set-up
-		setUpStorage func(mk *profiles.ImplStorageMock)
+		setUpStorage func(mk *storage.ImplProfilesStorageMock)
 		setUpUUID func(mk *uuidgenerator.ImplUUIDGeneratorMock)
 	}
 
@@ -36,6 +39,10 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 						"User-Id": {"user_id"},
 					},
 				},
+				setR: func (r *http.Request) {
+					// set-up request context
+					(*r) = *(*r).WithContext(context.WithValue(r.Context(), contexter.KeyProfileId, "id"))
+				},
 			},
 			output: output{
 				code: http.StatusOK,
@@ -44,9 +51,9 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 					"Content-Type": {"application/json"},
 				},
 			},
-			setUpStorage: func(mk *profiles.ImplStorageMock) {
+			setUpStorage: func(mk *storage.ImplProfilesStorageMock) {
 				mk.
-					On("GetProfileByUserId", "user_id").
+					On("GetProfileById", "id").
 					Return(&profiles.Profile{
 						ID:      optional.Some("id"),
 						UserID:  optional.Some("user_id"),
@@ -70,6 +77,10 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 						"User-Id": {"user_id"},
 					},
 				},
+				setR: func (r *http.Request) {
+					// set-up request context
+					(*r) = *r.WithContext(context.WithValue(r.Context(), contexter.KeyProfileId, "id"))
+				},
 			},
 			output: output{
 				code: http.StatusNotFound,
@@ -78,10 +89,10 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 					"Content-Type": {"application/json"},
 				},
 			},
-			setUpStorage: func(mk *profiles.ImplStorageMock) {
+			setUpStorage: func(mk *storage.ImplProfilesStorageMock) {
 				mk.
-					On("GetProfileByUserId", "user_id").
-					Return(&profiles.Profile{}, profiles.ErrStorageNotFound)
+					On("GetProfileById", "id").
+					Return(&profiles.Profile{}, storage.ErrStorageNotFound)
 			},
 			setUpUUID: func(mk *uuidgenerator.ImplUUIDGeneratorMock) {},
 		},
@@ -96,6 +107,10 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 						"User-Id": {"user_id"},
 					},
 				},
+				setR: func (r *http.Request) {
+					// set-up request context
+					(*r) = *r.WithContext(context.WithValue(r.Context(), contexter.KeyProfileId, "id"))
+				},
 			},
 			output: output{
 				code: http.StatusInternalServerError,
@@ -104,10 +119,10 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 					"Content-Type": {"application/json"},
 				},
 			},
-			setUpStorage: func(mk *profiles.ImplStorageMock) {
+			setUpStorage: func(mk *storage.ImplProfilesStorageMock) {
 				mk.
-					On("GetProfileByUserId", "user_id").
-					Return(&profiles.Profile{}, profiles.ErrStorageInternal)
+					On("GetProfileById", "id").
+					Return(&profiles.Profile{}, storage.ErrStorageInternal)
 			},
 			setUpUUID: func(mk *uuidgenerator.ImplUUIDGeneratorMock) {},
 		},
@@ -117,16 +132,17 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			// arrange
-			st := profiles.NewImplStorageMock()
+			st := storage.NewImplProfilesStorageMock()
 			c.setUpStorage(st)
 
 			uuid := uuidgenerator.NewUUIDGeneratorMock()
 			c.setUpUUID(uuid)
 
 			ct := NewProfileController(st, uuid)
-			hd := ct.GetProfileByUserId()
+			hd := ct.GetProfileById()
 
 			// act
+			c.input.setR(c.input.r)
 			hd(c.input.w, c.input.r)
 
 			// assert
@@ -148,7 +164,7 @@ func TestProfileController_ActivateProfile(t *testing.T) {
 		input input
 		output output
 		// set-up
-		setUpStorage func(mk *profiles.ImplStorageMock)
+		setUpStorage func(mk *storage.ImplProfilesStorageMock)
 		setUpUUID func(mk *uuidgenerator.ImplUUIDGeneratorMock)
 	}
 
@@ -172,7 +188,7 @@ func TestProfileController_ActivateProfile(t *testing.T) {
 					"Content-Type": {"application/json"},
 				},
 			},
-			setUpStorage: func(mk *profiles.ImplStorageMock) {
+			setUpStorage: func(mk *storage.ImplProfilesStorageMock) {
 				mk.
 					On("ActivateProfile", &profiles.Profile{
 						ID:      optional.Some("id"),
@@ -206,13 +222,13 @@ func TestProfileController_ActivateProfile(t *testing.T) {
 					"Content-Type": {"application/json"},
 				},
 			},
-			setUpStorage: func(mk *profiles.ImplStorageMock) {
+			setUpStorage: func(mk *storage.ImplProfilesStorageMock) {
 				mk.
 					On("ActivateProfile", &profiles.Profile{
 						ID:      optional.Some("id"),
 						UserID:  optional.Some("user_id"),
 					}).
-					Return(profiles.ErrStorageNotUnique)
+					Return(storage.ErrStorageNotUnique)
 			},
 			setUpUUID: func(mk *uuidgenerator.ImplUUIDGeneratorMock) {
 				mk.
@@ -240,13 +256,13 @@ func TestProfileController_ActivateProfile(t *testing.T) {
 					"Content-Type": {"application/json"},
 				},
 			},
-			setUpStorage: func(mk *profiles.ImplStorageMock) {
+			setUpStorage: func(mk *storage.ImplProfilesStorageMock) {
 				mk.
 					On("ActivateProfile", &profiles.Profile{
 						ID:      optional.Some("id"),
 						UserID:  optional.Some("user_id"),
 					}).
-					Return(profiles.ErrStorageInternal)
+					Return(storage.ErrStorageInternal)
 			},
 			setUpUUID: func(mk *uuidgenerator.ImplUUIDGeneratorMock) {
 				mk.
@@ -260,7 +276,7 @@ func TestProfileController_ActivateProfile(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			// arrange
-			st := profiles.NewImplStorageMock()
+			st := storage.NewImplProfilesStorageMock()
 			c.setUpStorage(st)
 
 			uuid := uuidgenerator.NewUUIDGeneratorMock()
