@@ -22,12 +22,12 @@ type ImplStorageMySQLTx struct {
 	tr transactioner.Transactioner
 }
 
-// GetProfileByUserId returns a profile by its userId
-func (s *ImplStorageMySQLTx) GetProfileByUserId(userId string) (pf *Profile, err error) {
+// GetProfileById returns a profile by its userId
+func (s *ImplStorageMySQLTx) GetProfileById(id string) (pf *Profile, err error) {
 	// run operation
 	e := s.tr.Do(func() (e error) {
 		// get base values from storage (wrapping process)
-		pf, err = s.st.GetProfileByUserId(userId)
+		pf, err = s.st.GetProfileById(id)
 		if err != nil {
 			e = err
 		}

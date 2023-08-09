@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"api/internal/profiles"
+	"api/internal/profiles/contexter"
 	"api/pkg/uuidgenerator"
 	"api/pkg/web"
 	"errors"
@@ -35,13 +36,13 @@ type ResponseGetProfileByID struct {
 	Data    *ProfileDTO `json:"data"`
 	Error	bool		`json:"error"`
 }
-func (ct *ProfileController) GetProfileByUserId() http.HandlerFunc {
+func (ct *ProfileController) GetProfileById() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// request
-		userId := (*r).Header.Get("User-Id")
+		id := r.Context().Value(contexter.KeyProfileId).(string)
 
 		// process
-		pf, err := ct.st.GetProfileByUserId(userId)
+		pf, err := ct.st.GetProfileById(id)
 		if err != nil {
 			var code int; var body *ResponseGetProfileByID
 

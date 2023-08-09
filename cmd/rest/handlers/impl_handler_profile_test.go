@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"api/internal/profiles"
+	"api/internal/profiles/contexter"
 	"api/pkg/uuidgenerator"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,8 +14,8 @@ import (
 )
 
 // Tests for ProfileController handlers
-func TestProfileController_GetProfileByUserId(t *testing.T) {
-	type input struct { w *httptest.ResponseRecorder; r *http.Request }
+func TestProfileController_GetProfileById(t *testing.T) {
+	type input struct { w *httptest.ResponseRecorder; r *http.Request; setR func (r *http.Request) }
 	type output struct { code int; body string; headers http.Header }
 	type testCase struct {
 		name string
@@ -36,6 +38,10 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 						"User-Id": {"user_id"},
 					},
 				},
+				setR: func (r *http.Request) {
+					// set-up request context
+					(*r) = *(*r).WithContext(context.WithValue(r.Context(), contexter.KeyProfileId, "id"))
+				},
 			},
 			output: output{
 				code: http.StatusOK,
@@ -46,7 +52,7 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 			},
 			setUpStorage: func(mk *profiles.ImplStorageMock) {
 				mk.
-					On("GetProfileByUserId", "user_id").
+					On("GetProfileById", "id").
 					Return(&profiles.Profile{
 						ID:      optional.Some("id"),
 						UserID:  optional.Some("user_id"),
@@ -70,6 +76,10 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 						"User-Id": {"user_id"},
 					},
 				},
+				setR: func (r *http.Request) {
+					// set-up request context
+					(*r) = *r.WithContext(context.WithValue(r.Context(), contexter.KeyProfileId, "id"))
+				},
 			},
 			output: output{
 				code: http.StatusNotFound,
@@ -80,7 +90,7 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 			},
 			setUpStorage: func(mk *profiles.ImplStorageMock) {
 				mk.
-					On("GetProfileByUserId", "user_id").
+					On("GetProfileById", "id").
 					Return(&profiles.Profile{}, profiles.ErrStorageNotFound)
 			},
 			setUpUUID: func(mk *uuidgenerator.ImplUUIDGeneratorMock) {},
@@ -96,6 +106,10 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 						"User-Id": {"user_id"},
 					},
 				},
+				setR: func (r *http.Request) {
+					// set-up request context
+					(*r) = *r.WithContext(context.WithValue(r.Context(), contexter.KeyProfileId, "id"))
+				},
 			},
 			output: output{
 				code: http.StatusInternalServerError,
@@ -106,7 +120,7 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 			},
 			setUpStorage: func(mk *profiles.ImplStorageMock) {
 				mk.
-					On("GetProfileByUserId", "user_id").
+					On("GetProfileById", "id").
 					Return(&profiles.Profile{}, profiles.ErrStorageInternal)
 			},
 			setUpUUID: func(mk *uuidgenerator.ImplUUIDGeneratorMock) {},
@@ -124,9 +138,10 @@ func TestProfileController_GetProfileByUserId(t *testing.T) {
 			c.setUpUUID(uuid)
 
 			ct := NewProfileController(st, uuid)
-			hd := ct.GetProfileByUserId()
+			hd := ct.GetProfileById()
 
 			// act
+			c.input.setR(c.input.r)
 			hd(c.input.w, c.input.r)
 
 			// assert

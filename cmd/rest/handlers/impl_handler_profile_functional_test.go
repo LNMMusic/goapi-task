@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"api/internal/profiles"
+	"api/internal/profiles/contexter"
 	"api/pkg/mysql/transactioner"
 	"api/pkg/uuidgenerator"
+	"context"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -18,7 +20,7 @@ import (
 
 // Functional Tests for Profile Controller
 func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
-	type input struct { r *http.Request; rr *httptest.ResponseRecorder }
+	type input struct { r *http.Request; rr *httptest.ResponseRecorder; setR func (r *http.Request) }
 	type output struct { code int; body string; headers http.Header }
 	type testCase struct {
 		name string
@@ -44,6 +46,10 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 					},
 				},
 				rr: httptest.NewRecorder(),
+				setR: func (r *http.Request) {
+					// set-up context
+					(*r) = *(*r).WithContext(context.WithValue((*r).Context(), contexter.KeyProfileId, "1"))
+				},
 			},
 			output: output{
 				code: http.StatusOK,
@@ -57,7 +63,7 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 				mk.ExpectBegin()
 
 				// query
-				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE user_id = ?" 
+				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?" 
 
 				cols := []string{"id", "user_id", "name", "email", "phone", "address"}
 				rows := sqlmock.NewRows(cols)
@@ -88,6 +94,10 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 					},
 				},
 				rr: httptest.NewRecorder(),
+				setR: func (r *http.Request) {
+					// set-up context
+					(*r) = *(*r).WithContext(context.WithValue((*r).Context(), contexter.KeyProfileId, "1"))
+				},
 			},
 			output: output{
 				code: http.StatusOK,
@@ -101,7 +111,7 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 				mk.ExpectBegin()
 
 				// query
-				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE user_id = ?" 
+				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?" 
 
 				cols := []string{"id", "user_id", "name", "email", "phone", "address"}
 				rows := sqlmock.NewRows(cols)
@@ -133,6 +143,10 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 					},
 				},
 				rr: httptest.NewRecorder(),
+				setR: func (r *http.Request) {
+					// set-up context
+					(*r) = *(*r).WithContext(context.WithValue((*r).Context(), contexter.KeyProfileId, "1"))
+				},
 			},
 			output: output{
 				code: http.StatusNotFound,
@@ -146,7 +160,7 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 				mk.ExpectBegin()
 
 				// query
-				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE user_id = ?" 
+				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?" 
 
 				mk.ExpectPrepare(regexp.QuoteMeta(query)).ExpectQuery().WithArgs("1").WillReturnError(sql.ErrNoRows)
 
@@ -166,6 +180,10 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 					},
 				},
 				rr: httptest.NewRecorder(),
+				setR: func (r *http.Request) {
+					// set-up context
+					(*r) = *(*r).WithContext(context.WithValue((*r).Context(), contexter.KeyProfileId, "1"))
+				},
 			},
 			output: output{
 				code: http.StatusInternalServerError,
@@ -179,7 +197,7 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 				mk.ExpectBegin()
 
 				// query
-				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE user_id = ?" 
+				query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?" 
 
 				mk.ExpectPrepare(regexp.QuoteMeta(query)).ExpectQuery().WithArgs("1").WillReturnError(sql.ErrConnDone)
 
@@ -213,9 +231,10 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 			c.setUpUUID(uuid)
 
 			ct := NewProfileController(st, uuid)
-			hd := ct.GetProfileByUserId()
+			hd := ct.GetProfileById()
 
 			// act
+			c.input.setR(c.input.r)
 			hd(c.input.rr, c.input.r)
 
 			// assert

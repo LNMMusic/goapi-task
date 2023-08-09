@@ -7,8 +7,8 @@ import (
 )
 
 // Tests for ImplStorageValidator
-func TestImplStorageValidator_GetProfileByUserId(t *testing.T) {
-	type input struct { userId string }
+func TestImplStorageValidator_GetProfileById(t *testing.T) {
+	type input struct { id string }
 	type output struct { pf *Profile; err error; errMsg string }
 	type testCase struct {
 		name string
@@ -23,10 +23,10 @@ func TestImplStorageValidator_GetProfileByUserId(t *testing.T) {
 		// valid cases
 		{
 			name: "valid case",
-			input: input{ userId: "user_id" },
+			input: input{ id: "id" },
 			output: output{ pf: &Profile{}, err: nil, errMsg: "" },
 			setUpStorage: func(mk *ImplStorageMock) {
-				mk.On("GetProfileByUserId", "user_id").Return(&Profile{}, nil)
+				mk.On("GetProfileById", "id").Return(&Profile{}, nil)
 			},
 			setUpValidator: func(mk *ImplValidatorMock) {},
 		},
@@ -35,10 +35,10 @@ func TestImplStorageValidator_GetProfileByUserId(t *testing.T) {
 		// -> storage
 		{
 			name: "storage error",
-			input: input{ userId: "user_id" },
+			input: input{ id: "id" },
 			output: output{ pf: &Profile{}, err: ErrStorageInternal, errMsg: "storage: internal storage error" },
 			setUpStorage: func(mk *ImplStorageMock) {
-				mk.On("GetProfileByUserId", "user_id").Return(&Profile{}, ErrStorageInternal)
+				mk.On("GetProfileById", "id").Return(&Profile{}, ErrStorageInternal)
 			},
 			setUpValidator: func(mk *ImplValidatorMock) {},
 		},
@@ -57,7 +57,7 @@ func TestImplStorageValidator_GetProfileByUserId(t *testing.T) {
 			impl := NewImplStorageValidator(st, vl)
 
 			// act
-			pf, err := impl.GetProfileByUserId(c.input.userId)
+			pf, err := impl.GetProfileById(c.input.id)
 
 			// assert
 			assert.Equal(t, c.output.pf, pf)

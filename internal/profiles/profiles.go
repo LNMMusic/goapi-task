@@ -25,7 +25,7 @@ type Profile struct {
 // Storage interface for profiles
 type Storage interface {
 	// GetProfileByID returns a profile by its ID
-	GetProfileByUserId(userId string) (pf *Profile, err error)
+	GetProfileById(id string) (pf *Profile, err error)
 
 	// ActivateProfile
 	ActivateProfile(pf *Profile) (err error)
