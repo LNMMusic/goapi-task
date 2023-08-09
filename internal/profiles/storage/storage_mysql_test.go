@@ -1,6 +1,7 @@
-package profiles
+package storage
 
 import (
+	"api/internal/profiles"
 	"database/sql"
 	"errors"
 	"regexp"
@@ -12,10 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Tests for ImplStorageMySQL
-func TestImplStorageMySQL_GetProfileById(t *testing.T) {
+// Tests for ImplProfilesStorageMySQL
+func TestImplProfilesStorageMySQL_GetProfileById(t *testing.T) {
 	type input struct { id string }
-	type output struct { pf *Profile; err error; errMsg string }
+	type output struct { pf *profiles.Profile; err error; errMsg string }
 	type test struct {
 		name string
 		input input
@@ -30,7 +31,7 @@ func TestImplStorageMySQL_GetProfileById(t *testing.T) {
 			name: "valid case - found",
 			input: input{id: "id"},
 			output: output{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Name: optional.Some("name"),
@@ -132,7 +133,7 @@ func TestImplStorageMySQL_GetProfileById(t *testing.T) {
 
 			c.setUpDB(mk)
 
-			impl := NewImplStorageMySQL(db)
+			impl := NewImplProfilesStorageMySQL(db)
 
 			// act
 			pf, err := impl.GetProfileById(c.input.id)
@@ -149,8 +150,8 @@ func TestImplStorageMySQL_GetProfileById(t *testing.T) {
 	}
 }
 
-func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
-	type input struct { pf *Profile }
+func TestImplProfilesStorageMySQL_ActiveProfile(t *testing.T) {
+	type input struct { pf *profiles.Profile }
 	type output struct { err error; errMsg string }
 	type testCase struct {
 		name string
@@ -165,7 +166,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		{
 			name: "valid case - success",
 			input: input{
-				pf: &Profile{
+				pf: &profiles.Profile{
 					ID: optional.Some("id"),
 					UserID: optional.Some("user_id"),
 					Name: optional.Some("name"),
@@ -198,7 +199,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> prepare error
 		{
 			name: "invalid case - prepare internal error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. sql: prepare error",
 			},
@@ -215,7 +216,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> exec error. default error
 		{
 			name: "invalid case - exec internal error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. sql: exec error",
 			},
@@ -233,7 +234,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> exec error. mysql error - duplicate entry
 		{
 			name: "invalid case - exec duplicate entry error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageNotUnique, errMsg: "storage: profile not unique. Error 1062: duplicate entry",
 			},
@@ -251,7 +252,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> exec error. mysql error - other
 		{
 			name: "invalid case - exec mysql error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. Error 1234: other error",
 			},
@@ -269,7 +270,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> result error.
 		{
 			name: "invalid case - result error",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. sql: result error",
 			},
@@ -287,7 +288,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 		// -> result error. rows affected != 1
 		{
 			name: "invalid case - result error. rows affected != 1",
-			input: input{pf: &Profile{}},
+			input: input{pf: &profiles.Profile{}},
 			output: output{
 				err: ErrStorageInternal, errMsg: "storage: internal storage error. rows affected != 1",
 			},
@@ -314,7 +315,7 @@ func TestImplStorageMySQL_ActiveProfile(t *testing.T) {
 
 			c.setUpDB(mk)
 
-			impl := NewImplStorageMySQL(db)
+			impl := NewImplProfilesStorageMySQL(db)
 
 			// act
 			err = impl.ActivateProfile(c.input.pf)

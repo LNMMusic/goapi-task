@@ -3,6 +3,7 @@ package handlers
 import (
 	"api/internal/profiles"
 	"api/internal/profiles/contexter"
+	"api/internal/profiles/storage"
 	"api/pkg/uuidgenerator"
 	"api/pkg/web"
 	"errors"
@@ -11,13 +12,13 @@ import (
 	"github.com/LNMMusic/optional"
 )
 
-func NewProfileController(st profiles.Storage, uuid uuidgenerator.UUIDGenerator) *ProfileController {
+func NewProfileController(st storage.ProfilesStorage, uuid uuidgenerator.UUIDGenerator) *ProfileController {
 	return &ProfileController{st: st, uuid: uuid}
 }
 
 type ProfileController struct {
 	// storage is the storage interface for profiles
-	st profiles.Storage
+	st storage.ProfilesStorage
 	// uuid is the uuid generator interface
 	uuid uuidgenerator.UUIDGenerator
 }
@@ -47,7 +48,7 @@ func (ct *ProfileController) GetProfileById() http.HandlerFunc {
 			var code int; var body *ResponseGetProfileByID
 
 			switch {
-			case errors.Is(err, profiles.ErrStorageNotFound):
+			case errors.Is(err, storage.ErrStorageNotFound):
 				code = http.StatusNotFound
 				body = &ResponseGetProfileByID{
 					Message: "Profile not found",
@@ -108,14 +109,14 @@ func (ct *ProfileController) ActivateProfile() http.HandlerFunc {
 			var code int; var body *ResponseActivateProfile
 
 			switch {
-			case errors.Is(err, profiles.ErrStorageInvalidProfile):
+			case errors.Is(err, storage.ErrStorageInvalidProfile):
 				code = http.StatusUnprocessableEntity
 				body = &ResponseActivateProfile{
 					Message: "Invalid profile",
 					Data:    nil,
 					Error:   true,
 				}
-			case errors.Is(err, profiles.ErrStorageNotUnique):
+			case errors.Is(err, storage.ErrStorageNotUnique):
 				code = http.StatusConflict
 				body = &ResponseActivateProfile{
 					Message: "Profile not unique",

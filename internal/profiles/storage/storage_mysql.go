@@ -1,6 +1,7 @@
-package profiles
+package storage
 
 import (
+	"api/internal/profiles"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -19,21 +20,21 @@ type ProfileMySQL struct {
 	Address sql.NullString
 }
 
-func NewImplStorageMySQL(db *sql.DB) (s *ImplStorageMySQL) {
-	s = &ImplStorageMySQL{
+func NewImplProfilesStorageMySQL(db *sql.DB) (s *ImplProfilesStorageMySQL) {
+	s = &ImplProfilesStorageMySQL{
 		db: db,
 	}
 	return
 }
 
-// ImplStorageMySQL is the implementation of the Storage interface for MySQL
-type ImplStorageMySQL struct {
+// ImplProfilesStorageMySQL is the implementation of the Storage interface for MySQL
+type ImplProfilesStorageMySQL struct {
 	// db is the database connection
 	db *sql.DB
 }
 
 // GetProfileById returns a profile by its id
-func (s *ImplStorageMySQL) GetProfileById(id string) (pf *Profile, err error) {
+func (s *ImplProfilesStorageMySQL) GetProfileById(id string) (pf *profiles.Profile, err error) {
 	// query
 	query := "SELECT id, user_id, name, email, phone, address FROM profiles WHERE id = ?"
 
@@ -65,8 +66,8 @@ func (s *ImplStorageMySQL) GetProfileById(id string) (pf *Profile, err error) {
 		return
 	}
 
-	// serialize ProfileMySQL to Profile
-	pf = new(Profile)
+	// serialize ProfileMySQL to profiles.Profile
+	pf = new(profiles.Profile)
 	if pfMySQL.ID.Valid {
 		pf.ID = optional.Some(pfMySQL.ID.String)
 	}
@@ -90,8 +91,8 @@ func (s *ImplStorageMySQL) GetProfileById(id string) (pf *Profile, err error) {
 }
 
 // ActivateProfile
-func (s *ImplStorageMySQL) ActivateProfile(pf *Profile) (err error) {
-	// deserialize Profile to ProfileMySQL
+func (s *ImplProfilesStorageMySQL) ActivateProfile(pf *profiles.Profile) (err error) {
+	// deserialize profiles.Profile to ProfileMySQL
 	var pfMySQL ProfileMySQL
 	if pf.ID.IsSome() {
 		pfMySQL.ID.String, _ = pf.ID.Unwrap()

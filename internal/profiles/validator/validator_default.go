@@ -1,6 +1,7 @@
-package profiles
+package validator
 
 import (
+	"api/internal/profiles"
 	"fmt"
 	"regexp"
 )
@@ -10,7 +11,7 @@ type Config struct {
 	RegexEmail string
 	RegexPhone string
 }
-func NewImplValidatorDefault(cfg *Config) (impl *ImplValidatorDefault) {
+func NewImplProfilesValidatorDefault(cfg *Config) (impl *ImplProfilesValidatorDefault) {
 	// default config
 	defaultCfg := &Config{
 		RegexEmail: `^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`,
@@ -30,26 +31,26 @@ func NewImplValidatorDefault(cfg *Config) (impl *ImplValidatorDefault) {
 	regexPhone, _ := regexp.Compile(defaultCfg.RegexPhone)
 
 	// create implementation
-	impl = &ImplValidatorDefault{
+	impl = &ImplProfilesValidatorDefault{
 		regexEmail: regexEmail,
 		regexPhone: regexPhone,
 	}
 	return
 }
 
-// ImplValidatorDefault is the default implementation of the Validator interface
-type ImplValidatorDefault struct {
+// ImplProfilesValidatorDefault is the default implementation of the Validator interface
+type ImplProfilesValidatorDefault struct {
 	// regex patterns
 	regexEmail *regexp.Regexp
 	regexPhone *regexp.Regexp
 }
 
-func (impl *ImplValidatorDefault) Default(pf *Profile) (err error) {
+func (impl *ImplProfilesValidatorDefault) Default(pf *profiles.Profile) (err error) {
 	// set default values for profile
 	return
 }
 
-func (impl *ImplValidatorDefault) Validate(pf *Profile) (err error) {
+func (impl *ImplProfilesValidatorDefault) Validate(pf *profiles.Profile) (err error) {
 	// required fields (not null)
 	if !pf.ID.IsSome() {
 		err = fmt.Errorf("%w - id field is required", ErrValidatorInvalidProfile)

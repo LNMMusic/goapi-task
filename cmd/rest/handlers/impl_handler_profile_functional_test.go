@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"api/internal/profiles"
 	"api/internal/profiles/contexter"
+	"api/internal/profiles/storage"
+	"api/internal/profiles/validator"
 	"api/pkg/mysql/transactioner"
 	"api/pkg/uuidgenerator"
 	"context"
@@ -218,11 +219,11 @@ func TestFunctionalProfileController_GetProfileByUserId(t *testing.T) {
 
 			c.setUpDatabase(mk)
 
-			vl := profiles.NewImplValidatorDefault(&profiles.Config{})
+			vl := validator.NewImplProfilesValidatorDefault(&validator.Config{})
 			tx := transactioner.NewImplTransactionerDefault(db)
-			st := profiles.NewImplStorageValidator(
-				profiles.NewImplStorageMySQLTx(
-					profiles.NewImplStorageMySQL(db),
+			st := storage.NewImplProfilesStorageValidator(
+				storage.NewImplProfilesStorageMySQLTx(
+					storage.NewImplProfilesStorageMySQL(db),
 					tx,
 				),
 				vl,
@@ -432,11 +433,11 @@ func TestFunctionalProfileController_ActivateProfile(t *testing.T) {
 
 			c.setUpDatabase(mk)
 
-			vl := profiles.NewImplValidatorDefault(&profiles.Config{})
+			vl := validator.NewImplProfilesValidatorDefault(&validator.Config{})
 			tx := transactioner.NewImplTransactionerDefault(db)
-			st := profiles.NewImplStorageValidator(
-				profiles.NewImplStorageMySQLTx(
-					profiles.NewImplStorageMySQL(db),
+			st := storage.NewImplProfilesStorageValidator(
+				storage.NewImplProfilesStorageMySQLTx(
+					storage.NewImplProfilesStorageMySQL(db),
 					tx,
 				),
 				vl,
